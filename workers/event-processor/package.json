@@ -1,0 +1,18 @@
+{
+  "name": "@nexusgrid/event-processor",
+  "version": "1.0.0",
+  "description": "High-throughput Kafka consumer micro-batching into ClickHouse and managing DLQ routes",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@nexusgrid/contracts": "workspace:*",
+    "@nexusgrid/database": "workspace:*",
+    "@nexusgrid/observability": "workspace:*",
+    "@nexusgrid/config": "workspace:*",
+    "@nexusgrid/ingestion-service": "workspace:*"
+  }
+}
+

@@ -1,0 +1,19 @@
+{
+  "name": "@nexusgrid/ingestion-service",
+  "version": "1.0.0",
+  "description": "High-throughput event validation, rate-limiting, and Kafka producer gateway",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@nexusgrid/contracts": "workspace:*",
+    "@nexusgrid/database": "workspace:*",
+    "@nexusgrid/observability": "workspace:*",
+    "@nexusgrid/config": "workspace:*",
+    "fastify": "^5.0.0",
+    "@fastify/cors": "^10.0.0"
+  }
+}
+

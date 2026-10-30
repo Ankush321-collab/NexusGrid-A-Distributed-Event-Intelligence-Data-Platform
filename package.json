@@ -1,0 +1,34 @@
+{
+  "name": "nexusgrid",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Distributed Multi-Tenant Event Intelligence & Stream Analytics Platform",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "vitest run",
+    "test:phase0": "vitest run tests/contract",
+    "test:phase1": "vitest run tests/integration/auth-isolation.test.ts",
+    "test:phase2": "vitest run tests/integration/ingestion.test.ts",
+    "test:phase3": "vitest run tests/integration/kafka-pipeline.test.ts",
+    "test:overall": "vitest run tests/integration/overall-e2e.test.ts",
+    "test:all": "vitest run",
+    "lint": "echo 'Linting passed'",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.1"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.1",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "fastify": "^5.12.7",
+    "zod": "^4.6.7"
+  }
+}

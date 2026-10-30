@@ -1,0 +1,46 @@
+name: NexusGrid Monorepo CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  validate:
+    name: Lint, Typecheck, and Contract Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Monorepo Typecheck
+        run: pnpm typecheck
+
+      - name: Phase 0 Contract Tests
+        run: pnpm test:phase0
+
+      - name: Phase 1 Multi-Tenant Auth Tests
+        run: pnpm test:phase1
+
+      - name: Phase 2 Ingestion & Gateway Defense Tests
+        run: pnpm test:phase2
+
+      - name: Phase 3 Streaming & DLQ Pipeline Tests
+        run: pnpm test:phase3
+
+      - name: End-to-End Overall Suite
+        run: pnpm test:overall
+

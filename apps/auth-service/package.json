@@ -1,0 +1,19 @@
+{
+  "name": "@nexusgrid/auth-service",
+  "version": "1.0.0",
+  "description": "Multi-tenant identity, API key lifecycle, and RBAC control service",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@nexusgrid/contracts": "workspace:*",
+    "@nexusgrid/database": "workspace:*",
+    "@nexusgrid/observability": "workspace:*",
+    "@nexusgrid/config": "workspace:*",
+    "fastify": "^5.0.0",
+    "@fastify/cors": "^10.0.0"
+  }
+}
+

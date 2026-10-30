@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@nexusgrid/contracts": ["./packages/contracts/src"],
+      "@nexusgrid/contracts/*": ["./packages/contracts/src/*"],
+      "@nexusgrid/config": ["./packages/config/src"],
+      "@nexusgrid/observability": ["./packages/observability/src"],
+      "@nexusgrid/database": ["./packages/database/src"]
+    }
+  },
+  "include": [
+    "packages/*/src/**/*",
+    "apps/*/src/**/*",
+    "workers/*/src/**/*",
+    "tests/**/*",
+    "scripts/**/*"
+  ]
+}
+

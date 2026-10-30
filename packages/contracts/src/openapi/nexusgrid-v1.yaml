@@ -1,0 +1,238 @@
+openapi: 3.1.0
+info:
+  title: NexusGrid Distributed Event Intelligence API
+  version: 1.0.0
+  description: High-throughput event ingestion, transactional metadata management, stream processing, and analytical query contracts.
+servers:
+  - url: http://localhost:8080
+    description: Local API Gateway
+paths:
+  /v1/auth/tenants:
+    post:
+      summary: Create a new tenant
+      tags: [Tenant Identity]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+      responses:
+        '201':
+          description: Tenant created successfully
+        '400':
+          $ref: '#/components/responses/ProblemDetailsResponse'
+
+  /v1/auth/projects:
+    post:
+      summary: Create a project within a tenant
+      tags: [Tenant Identity]
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_id, name, environment]
+              properties:
+                tenant_id: { type: string }
+                name: { type: string }
+                environment:
+                  type: string
+                  enum: [dev, staging, prod]
+      responses:
+        '201':
+          description: Project created
+        '403':
+          $ref: '#/components/responses/ProblemDetailsResponse'
+
+  /v1/auth/keys:
+    post:
+      summary: Generate an API Key for a project
+      tags: [Tenant Identity]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_id, project_id, name, scopes]
+              properties:
+                tenant_id: { type: string }
+                project_id: { type: string }
+                name: { type: string }
+                scopes:
+                  type: array
+                  items:
+                    type: string
+                    enum: [events:write, events:read, admin]
+      responses:
+        '201':
+          description: API key generated (plaintext secret returned once)
+        '403':
+          $ref: '#/components/responses/ProblemDetailsResponse'
+
+  /v1/events:
+    post:
+      summary: Ingest a single event
+      tags: [Ingestion]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventEnvelope'
+      responses:
+        '202':
+          description: Event accepted for asynchronous stream processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestionResponse'
+        '400':
+          $ref: '#/components/responses/ProblemDetailsResponse'
+        '409':
+          description: Concurrent request with duplicate idempotency key in progress
+          $ref: '#/components/responses/ProblemDetailsResponse'
+        '429':
+          description: Rate limit exceeded
+          $ref: '#/components/responses/ProblemDetailsResponse'
+
+  /v1/events:batch:
+    post:
+      summary: Ingest a batch of events (up to 500 events, 1MB limit)
+      tags: [Ingestion]
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  maxItems: 500
+                  items:
+                    $ref: '#/components/schemas/EventEnvelope'
+      responses:
+        '202':
+          description: Batch accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchIngestionResponse'
+        '413':
+          description: Payload too large
+          $ref: '#/components/responses/ProblemDetailsResponse'
+        '429':
+          description: Rate limit exceeded
+          $ref: '#/components/responses/ProblemDetailsResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    EventEnvelope:
+      type: object
+      required:
+        - event_id
+        - tenant_id
+        - project_id
+        - event_name
+        - occurred_at
+        - schema_version
+        - properties
+      properties:
+        event_id:
+          type: string
+          pattern: '^[0-9A-HJKMNP-TV-Z]{26}$'
+        tenant_id: { type: string, minLength: 3, maxLength: 64 }
+        project_id: { type: string, minLength: 3, maxLength: 64 }
+        event_name: { type: string, minLength: 1, maxLength: 128 }
+        occurred_at: { type: string, format: date-time }
+        received_at: { type: string, format: date-time }
+        schema_version: { type: integer, minimum: 1 }
+        idempotency_key: { type: string, maxLength: 128 }
+        properties: { type: object, additionalProperties: true }
+
+    IngestionResponse:
+      type: object
+      required: [status, event_id, correlation_id, received_at]
+      properties:
+        status:
+          type: string
+          enum: [ACCEPTED, REJECTED]
+        event_id: { type: string }
+        correlation_id: { type: string }
+        received_at: { type: string, format: date-time }
+        partition: { type: integer }
+
+    BatchIngestionResponse:
+      type: object
+      required: [status, total, accepted, rejected, correlation_id]
+      properties:
+        status:
+          type: string
+          enum: [ACCEPTED, PARTIAL, REJECTED]
+        total: { type: integer }
+        accepted: { type: integer }
+        rejected: { type: integer }
+        correlation_id: { type: string }
+        failures:
+          type: array
+          items:
+            type: object
+            properties:
+              index: { type: integer }
+              event_id: { type: string }
+              reason: { type: string }
+
+  responses:
+    ProblemDetailsResponse:
+      description: RFC 7807 Problem Details
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            required: [type, title, status, detail, code, trace_id]
+            properties:
+              type: { type: string }
+              title: { type: string }
+              status: { type: integer }
+              detail: { type: string }
+              code: { type: string }
+              trace_id: { type: string }
+

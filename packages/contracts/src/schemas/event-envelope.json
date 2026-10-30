@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NexusGridEventEnvelope",
+  "type": "object",
+  "required": [
+    "event_id",
+    "tenant_id",
+    "project_id",
+    "event_name",
+    "occurred_at",
+    "schema_version",
+    "properties"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Deterministic ULID 26-character identifier"
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 64,
+      "description": "Tenant unique identifier"
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 64,
+      "description": "Project identifier within tenant"
+    },
+    "event_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Dot-separated hierarchical event name (e.g. checkout.completed)"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Client timestamp when the event occurred in ISO 8601 UTC"
+    },
+    "received_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Server stamped timestamp on receipt"
+    },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Schema version number"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Client-supplied idempotency key for deduplication"
+    },
+    "properties": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Arbitrary key-value event payload attributes"
+    }
+  },
+  "additionalProperties": false
+}
+
