@@ -37,6 +37,27 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@20.19.43)
 
+  apps/alert-service:
+    dependencies:
+      '@fastify/cors':
+        specifier: ^10.0.0
+        version: 10.1.0
+      '@nexusgrid/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@nexusgrid/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@nexusgrid/database':
+        specifier: workspace:*
+        version: link:../../packages/database
+      '@nexusgrid/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
+      fastify:
+        specifier: ^5.0.0
+        version: 5.12.7
+
   apps/auth-service:
     dependencies:
       '@fastify/cors':
@@ -59,6 +80,27 @@ importers:
         version: 5.12.7
 
   apps/ingestion-service:
+    dependencies:
+      '@fastify/cors':
+        specifier: ^10.0.0
+        version: 10.1.0
+      '@nexusgrid/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@nexusgrid/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@nexusgrid/database':
+        specifier: workspace:*
+        version: link:../../packages/database
+      '@nexusgrid/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
+      fastify:
+        specifier: ^5.0.0
+        version: 5.12.7
+
+  apps/query-service:
     dependencies:
       '@fastify/cors':
         specifier: ^10.0.0

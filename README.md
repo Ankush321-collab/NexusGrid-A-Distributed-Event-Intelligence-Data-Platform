@@ -3,7 +3,7 @@
 > **Distributed Multi-Tenant Event Intelligence & Stream Analytics Platform**  
 > *A production-inspired, verifiable distributed systems platform engineered for high-throughput event ingestion, resilient Kafka stream processing, transactional metadata isolation in PostgreSQL, and real-time columnar analytics.*
 
-[![CI Status](https://img.shields.io/badge/CI-Passing%20(35%2F35%20Tests)-success?style=flat-square&logo=githubactions)](.github/workflows/ci.yml)
+[![CI Status](https://img.shields.io/badge/CI-Passing%20(63%2F63%20Tests)-success?style=flat-square&logo=githubactions)](.github/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-v20%2B%20LTS-brightgreen?style=flat-square&logo=nodedotjs)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4%20(Strict)-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Monorepo](https://img.shields.io/badge/Monorepo-pnpm%20%2B%20Turborepo-orange?style=flat-square&logo=pnpm)](https://pnpm.io/)
@@ -122,8 +122,12 @@ flowchart TB
 | **Phase 1** | **Tenant Identity & Metadata** | **COMPLETED** | **6 / 6 Passing** | PostgreSQL relational DDL, composite indexes (`idx_api_keys_lookup`, `idx_audit_logs_tenant_cursor`), API key crypto, scoped RBAC, cursor pagination. |
 | **Phase 2** | **Ingestion Gateway & Defense** | **COMPLETED** | **7 / 7 Passing** | Fastify HTTP gateway, Redis token-bucket rate limiter via atomic Lua, 24h idempotency guard (`NX PX`), payload byte & timestamp boundary validation, batch processing. |
 | **Phase 3** | **Kafka Streaming & DLQ** | **COMPLETED** | **6 / 6 Passing** | Deterministic partition hash `hash(tenant:project)`, stream consumer group, tri-state error classifier, DLQ publisher with headers, replay tool, transactional outbox poller. |
-| **Overall**| **End-to-End Pipeline** | **COMPLETED** | **1 / 1 Passing** | Full multi-tenant lifecycle from tenant onboarding to HTTP ingestion, Kafka partitioned delivery, worker batching, poison pill DLQ isolation, and replay. |
-| **Phase 4–12** | **Full Platform Scale** | *Roadmapped* | - | ClickHouse analytical store, AST query parser, SLO alert engine, Kubernetes Helm packaging, Terraform cloud IaC, full-scale k6 benchmarks. |
+| **Phase 4** | **ClickHouse Columnar Storage** | **COMPLETED** | **6 / 6 Passing** | ClickHouse `ReplacingMergeTree` schema, monthly partition pruning, micro-batch bulk sink (5000 items / 500ms), cold S3/MinIO Parquet archive, 90-day TTL. |
+| **Phase 5** | **Analytical Query API & Cache** | **COMPLETED** | **5 / 5 Passing** | Parametric analytics query API, strict AST allowlisting (SQLi prevention), max 90-day scan limit, Redis stampede protection (single-flight promise coalescing). |
+| **Phase 6** | **Anomaly Detection & Alerts** | **COMPLETED** | **4 / 4 Passing** | SLO alert state machine, hysteresis anti-flapping (consecutive breaches), cooldown suppression, HMAC-SHA256 cryptographically signed webhook dispatching. |
+| **Hard Tests** | **Security, Concurrency & Chaos** | **COMPLETED** | **13 / 13 Passing** | Type 1: Timing attack resistance & fuzzing; Type 2: 100-request parallel stampede & burst hammer; Type 3: 50-poison barrage & crash recovery. |
+| **Overall**| **End-to-End Pipeline** | **COMPLETED** | **1 / 1 Passing** | Full multi-tenant lifecycle from tenant onboarding to HTTP ingestion, Kafka partitioned delivery, worker batching, poison pill DLQ isolation, ClickHouse, and alerts. |
+| **Phase 7–12** | **Production Reliability & IaC** | *Roadmapped* | - | Data reconciliation worker, Kubernetes Helm packaging, Terraform cloud IaC, full-scale k6 benchmarks, and Google SRE Production Readiness Review. |
 
 ---
 
