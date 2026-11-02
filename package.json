@@ -24,8 +24,10 @@
     "test:hard:type5": "vitest run tests/hard/type5-stream-alerting-chaos.test.ts",
     "test:hard:type6": "vitest run tests/hard/type6-distributed-e2e-pipeline-hard.test.ts",
     "test:hard": "vitest run tests/hard",
+    "test:load": "vitest run tests/load",
     "test:defenses": "vitest run tests/integration/production-defenses.test.ts",
     "test:overall": "vitest run tests/integration/overall-e2e.test.ts",
+    "benchmark:1m": "tsx scripts/benchmark-1m.ts",
     "test:all": "vitest run",
     "lint": "echo 'Linting passed'",
     "typecheck": "tsc --noEmit"

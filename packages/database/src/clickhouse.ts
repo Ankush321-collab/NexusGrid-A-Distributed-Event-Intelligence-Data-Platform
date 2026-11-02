@@ -189,8 +189,12 @@ export class InMemoryClickHouseAdapter implements ClickHouseClientInterface {
     // 2. Scan only matching partitions
     let candidateRows: ClickHouseEventRecord[] = [];
     for (const partKey of matchingPartitions) {
-      const partRows = this.partitions.get(partKey) || [];
-      candidateRows.push(...partRows);
+      const partRows = this.partitions.get(partKey);
+      if (partRows && partRows.length > 0) {
+        for (let i = 0; i < partRows.length; i++) {
+          candidateRows.push(partRows[i]);
+        }
+      }
     }
 
     const rowsScanned = candidateRows.length;
