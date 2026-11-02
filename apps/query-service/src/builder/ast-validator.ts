@@ -34,6 +34,10 @@ export class ASTValidator {
       return { valid: false, code: 'ERR_MISSING_PROJECT', error: 'project_id is required' };
     }
 
+    if (!SAFE_IDENTIFIER_REGEX.test(raw.project_id)) {
+      return { valid: false, code: 'ERR_SQL_INJECTION_DETECTED', error: 'project_id contains disallowed characters' };
+    }
+
     if (!raw.time_range || typeof raw.time_range !== 'object') {
       return { valid: false, code: 'ERR_MISSING_TIME_RANGE', error: 'time_range { start, end } is required' };
     }

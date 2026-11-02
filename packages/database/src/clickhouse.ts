@@ -131,7 +131,11 @@ export class InMemoryClickHouseAdapter implements ClickHouseClientInterface {
       for (const row of rows) {
         const dedupeKey = `${row.tenant_id}:${row.project_id}:${row.event_name}:${row.occurred_at}:${row.event_id}`;
         const existing = map.get(dedupeKey);
-        if (!existing || new Date(row.received_at) >= new Date(existing.received_at)) {
+        if (
+          !existing ||
+          row.schema_version > existing.schema_version ||
+          (row.schema_version === existing.schema_version && new Date(row.received_at) >= new Date(existing.received_at))
+        ) {
           map.set(dedupeKey, row);
         }
       }
@@ -245,7 +249,11 @@ export class InMemoryClickHouseAdapter implements ClickHouseClientInterface {
       for (const r of candidateRows) {
         const k = `${r.tenant_id}:${r.project_id}:${r.event_name}:${r.occurred_at}:${r.event_id}`;
         const existing = dedupeMap.get(k);
-        if (!existing || new Date(r.received_at) >= new Date(existing.received_at)) {
+        if (
+          !existing ||
+          r.schema_version > existing.schema_version ||
+          (r.schema_version === existing.schema_version && new Date(r.received_at) >= new Date(existing.received_at))
+        ) {
           dedupeMap.set(k, r);
         }
       }
