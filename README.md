@@ -3,7 +3,7 @@
 > **Distributed Multi-Tenant Event Intelligence & Stream Analytics Platform**  
 > *A production-inspired, verifiable distributed systems platform engineered for high-throughput event ingestion, resilient Kafka stream processing, transactional metadata isolation in PostgreSQL, and real-time columnar analytics.*
 
-[![CI Status](https://img.shields.io/badge/CI-Passing%20(63%2F63%20Tests)-success?style=flat-square&logo=githubactions)](.github/workflows/ci.yml)
+[![CI Status](https://img.shields.io/badge/CI-Passing%20(64%2F64%20Tests)-success?style=flat-square&logo=githubactions)](.github/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-v20%2B%20LTS-brightgreen?style=flat-square&logo=nodedotjs)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4%20(Strict)-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Monorepo](https://img.shields.io/badge/Monorepo-pnpm%20%2B%20Turborepo-orange?style=flat-square&logo=pnpm)](https://pnpm.io/)
@@ -281,14 +281,30 @@ cd NexusGrid-A-Distributed-Event-Intelligence-Data-Platform
 pnpm install
 ```
 
-### 2. Bootstrapping Local Infrastructure (Optional)
+### 2. Running Services with Docker Compose (12-Factor & .env Driven)
 ```bash
-# Launch PostgreSQL 16, Kafka KRaft, Redis 7, ClickHouse 24.3, and MinIO
-docker compose -f infra/compose/docker-compose.deps.yml up -d
+# 1. Copy the example environment file
+cp .env.example .env
 
-# Verify dependency health
-docker compose -f infra/compose/docker-compose.deps.yml ps
+# 2. Launch the complete 11-service stack (backing infrastructure + all 6 microservices)
+docker compose up -d
+
+# 3. Check service health status
+docker compose ps
 ```
+
+The stack orchestrates:
+- **`postgres`** (5432): Metadata, Tenants, Projects, Scoped API Keys, Audit Logs & Outbox
+- **`redis`** (6379): Token-bucket rate limiter, 24h idempotency lock & query cache
+- **`kafka`** (9092 / 29092): KRaft event bus (`nexusgrid.events.raw`, retry topics, DLQ)
+- **`clickhouse`** (8123 / 9000): ReplacingMergeTree columnar analytics & 90-day retention
+- **`minio`** (9002 / 9001): Cold S3 object storage for raw Parquet/JSON event archives
+- **`auth-service`** (8081): Tenant provisioning & scoped API key lifecycle
+- **`ingestion-service`** (8080): High-velocity event ingress & Kafka partitioning
+- **`query-service`** (8083): Analytical query engine with AST injection protection & stampede caching
+- **`alert-service`** (8084): Threshold rule evaluation, anti-flapping FSM & HMAC webhooks
+- **`event-processor`**: Worker micro-batching into ClickHouse and routing poison pills to DLQ
+- **`outbox-publisher`**: Worker forwarding PostgreSQL transactional outbox to Kafka
 
 ### 3. Running Services Locally
 ```bash
@@ -297,6 +313,12 @@ pnpm --filter @nexusgrid/auth-service start
 
 # Start Ingestion Service (Port 8080)
 pnpm --filter @nexusgrid/ingestion-service start
+
+# Start Query Service (Port 8083)
+pnpm --filter @nexusgrid/query-service start
+
+# Start Alert Service (Port 8084)
+pnpm --filter @nexusgrid/alert-service start
 
 # Start Stream Worker
 pnpm --filter @nexusgrid/event-processor start
@@ -309,10 +331,10 @@ pnpm --filter @nexusgrid/outbox-publisher start
 
 ## Phase-by-Phase Verification & Test Execution
 
-NexusGrid enforces rigorous step-by-step test verification. All test suites are self-contained and run in seconds:
+NexusGrid enforces rigorous step-by-step test verification. All test suites are self-contained and run in seconds with 0 failures:
 
 ```bash
-# Run Phase 0 Contract & Schema Tests (15 tests)
+# Run Phase 0 Contract & Schema Tests (16 tests)
 pnpm test:phase0
 
 # Run Phase 1 Tenant Identity & RBAC Isolation Tests (6 tests)
@@ -324,27 +346,54 @@ pnpm test:phase2
 # Run Phase 3 Kafka Streaming, Consumer, DLQ & Outbox Tests (6 tests)
 pnpm test:phase3
 
+# Run Phase 4 ClickHouse Analytical Sink & Cold Storage Tests (6 tests)
+pnpm test:phase4
+
+# Run Phase 5 High-Concurrency Query Engine & Stampede Cache Tests (5 tests)
+pnpm test:phase5
+
+# Run Phase 6 Real-Time Alert State Machine & Signed Webhook Tests (4 tests)
+pnpm test:phase6
+
+# Run Hard Test Suites: Type 1 (Adversarial Security & Fuzzing - 5 tests)
+pnpm test:hard:type1
+
+# Run Hard Test Suites: Type 2 (Concurrency, Stampede & Burst Hammer - 4 tests)
+pnpm test:hard:type2
+
+# Run Hard Test Suites: Type 3 (Chaos, 50-Poison Barrage & Crash Recovery - 4 tests)
+pnpm test:hard:type3
+
+# Run All 3 Hard Test Suites (13 tests)
+pnpm test:hard
+
 # Run Complete End-to-End Multi-Tenant Lifecycle Test (1 test)
 pnpm test:overall
 
-# Run All Monorepo Test Suites Across All Packages (35 tests)
+# Run All Monorepo Test Suites Across All 13 Test Files (64 tests)
 pnpm test:all
 ```
 
 ### Verified Test Results
 
 ```text
- ✓ tests/contract/config.test.ts            (4 tests)   23ms
- ✓ tests/contract/observability.test.ts     (4 tests)   32ms
- ✓ tests/contract/event-envelope.test.ts    (7 tests)  153ms
- ✓ tests/integration/auth-isolation.test.ts (6 tests)  497ms
- ✓ tests/integration/ingestion.test.ts      (7 tests)  391ms
- ✓ tests/integration/kafka-pipeline.test.ts (6 tests)   58ms
- ✓ tests/integration/overall-e2e.test.ts    (1 test)   333ms
+ ✓ tests/contract/config.test.ts                    (5 tests)   26ms
+ ✓ tests/contract/observability.test.ts             (4 tests)   23ms
+ ✓ tests/contract/event-envelope.test.ts            (7 tests)  143ms
+ ✓ tests/integration/auth-isolation.test.ts         (6 tests)  687ms
+ ✓ tests/integration/ingestion.test.ts              (7 tests)  587ms
+ ✓ tests/integration/kafka-pipeline.test.ts         (6 tests)   78ms
+ ✓ tests/integration/clickhouse-sink.test.ts        (6 tests)   32ms
+ ✓ tests/integration/query-service.test.ts          (5 tests)  733ms
+ ✓ tests/integration/alert-engine.test.ts           (4 tests)   29ms
+ ✓ tests/hard/type1-adversarial-security.test.ts    (5 tests)  529ms
+ ✓ tests/hard/type2-concurrency-race-stress.test.ts (4 tests)  735ms
+ ✓ tests/hard/type3-chaos-fault-injection.test.ts   (4 tests)   92ms
+ ✓ tests/integration/overall-e2e.test.ts            (1 test)   529ms
 
- Test Files  7 passed (7)
-      Tests  35 passed (35)
-   Duration  3.11s
+ Test Files  13 passed (13)
+      Tests  64 passed (64)
+   Duration  4.33s
 ```
 
 ---
