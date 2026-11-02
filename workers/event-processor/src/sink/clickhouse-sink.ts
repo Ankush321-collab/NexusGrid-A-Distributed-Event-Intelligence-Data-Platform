@@ -13,15 +13,22 @@ export interface SinkOptions {
   batchSize?: number;
   flushIntervalMs?: number;
   enableS3Archive?: boolean;
+  minFlushBatchSize?: number;
+  maxBufferLimit?: number;
+  enableAsyncInsert?: boolean;
 }
 
 export class ClickHouseBulkSink {
   private buffer: ClickHouseEventRecord[] = [];
   private rawBuffer: EventEnvelope[] = [];
   private flushTimer: NodeJS.Timeout | null = null;
+  private inFlightCount: number = 0;
   private batchSize: number;
   private flushIntervalMs: number;
   private enableS3Archive: boolean;
+  private minFlushBatchSize: number;
+  private maxBufferLimit: number;
+  public enableAsyncInsert: boolean;
   public totalFlushedToClickHouse: number = 0;
   public totalArchivedToS3: number = 0;
   public archivedBatches: S3ArchiveEntry[] = [];
@@ -33,6 +40,14 @@ export class ClickHouseBulkSink {
     this.batchSize = options.batchSize || 5000;
     this.flushIntervalMs = options.flushIntervalMs || 500;
     this.enableS3Archive = options.enableS3Archive !== false;
+    // Problem 3 Solution: Buffer defense to prevent ClickHouse "Too Many Parts" write amplification
+    this.minFlushBatchSize = options.minFlushBatchSize || 1;
+    this.maxBufferLimit = options.maxBufferLimit || 25000;
+    this.enableAsyncInsert = options.enableAsyncInsert !== false;
+  }
+
+  public canAcceptMore(): boolean {
+    return (this.buffer.length + this.inFlightCount) < this.maxBufferLimit;
   }
 
   public async push(event: EventEnvelope): Promise<void> {
@@ -40,11 +55,11 @@ export class ClickHouseBulkSink {
     this.buffer.push(chRecord);
     this.rawBuffer.push(event);
 
-    if (this.buffer.length >= this.batchSize) {
-      await this.flush();
+    if (this.buffer.length >= this.batchSize || this.buffer.length >= this.maxBufferLimit) {
+      await this.flush(true);
     } else if (!this.flushTimer) {
       this.flushTimer = setTimeout(() => {
-        this.flush().catch(() => {});
+        this.flush(true).catch(() => {});
       }, this.flushIntervalMs);
     }
   }
@@ -55,7 +70,7 @@ export class ClickHouseBulkSink {
     }
   }
 
-  public async flush(): Promise<{ inserted: number; archived: number }> {
+  public async flush(force: boolean = false): Promise<{ inserted: number; archived: number }> {
     if (this.flushTimer) {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;
@@ -65,10 +80,16 @@ export class ClickHouseBulkSink {
       return { inserted: 0, archived: 0 };
     }
 
+    // Defer flush if below minimum batch and not forced by timer/shutdown
+    if (!force && this.buffer.length < this.minFlushBatchSize) {
+      return { inserted: 0, archived: 0 };
+    }
+
     const recordsToInsert = this.buffer.slice();
     const rawEventsToArchive = this.rawBuffer.slice();
     this.buffer = [];
     this.rawBuffer = [];
+    this.inFlightCount = recordsToInsert.length;
 
     // 1. Bulk Insert into ClickHouse
     let inserted = 0;
@@ -80,6 +101,8 @@ export class ClickHouseBulkSink {
       this.buffer.unshift(...recordsToInsert);
       this.rawBuffer.unshift(...rawEventsToArchive);
       throw err;
+    } finally {
+      this.inFlightCount = 0;
     }
 
     // 2. Stream raw batch to Cold S3/MinIO Archive

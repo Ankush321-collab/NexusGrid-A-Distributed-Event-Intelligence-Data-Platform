@@ -8,6 +8,20 @@ export function startOutboxPublisher() {
   defaultLogger.info(`Starting ${config.SERVICE_NAME}...`);
   const poller = new OutboxPoller(defaultDatabase, defaultKafkaProducer, config.OUTBOX_POLL_INTERVAL_MS);
   poller.start();
+
+  // Problem 6 Solution: Graceful shutdown on SIGTERM / SIGINT
+  const onSignal = (signal: string) => {
+    defaultLogger.info(`Received ${signal}. Stopping outbox poller...`);
+    poller.stop();
+    defaultLogger.info('Outbox publisher stopped cleanly.');
+    if (process.env.NODE_ENV !== 'test') {
+      process.exit(0);
+    }
+  };
+
+  process.once('SIGTERM', () => onSignal('SIGTERM'));
+  process.once('SIGINT', () => onSignal('SIGINT'));
+
   return poller;
 }
 

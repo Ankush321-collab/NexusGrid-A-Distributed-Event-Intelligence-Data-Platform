@@ -360,6 +360,20 @@ export class InMemoryPostgresAdapter implements DatabaseAdapter {
     this.lockedOutboxIds.delete(id);
   }
 
+  /**
+   * Problem 4 Solution: Prunes processed outbox records older than retention threshold
+   * Prevents table bloat, index scan degradation, and continuous WAL pressure.
+   */
+  public async pruneProcessedOutbox(retentionDays: number = 7): Promise<number> {
+    const cutoff = Date.now() - retentionDays * 24 * 3600 * 1000;
+    const initialCount = this.outboxRecords.length;
+    this.outboxRecords = this.outboxRecords.filter((r) => {
+      if (r.processed_at === null) return true; // keep unprocessed
+      return Date.parse(r.processed_at) >= cutoff; // keep recent
+    });
+    return initialCount - this.outboxRecords.length;
+  }
+
   public async close(): Promise<void> {
     // In-memory cleanup
   }

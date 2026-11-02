@@ -63,6 +63,15 @@ if (process.env.NODE_ENV !== 'test' && import.meta.url === `file://${process.arg
       }
       defaultLogger.info(`Ingestion Service listening on ${address}`);
     });
+
+    const shutdown = async (signal: string) => {
+      defaultLogger.info(`Received ${signal}. Closing Ingestion Service HTTP server...`);
+      await app.close();
+      defaultLogger.info('Ingestion Service shut down gracefully.');
+      process.exit(0);
+    };
+    process.once('SIGTERM', () => shutdown('SIGTERM'));
+    process.once('SIGINT', () => shutdown('SIGINT'));
   });
 }
 

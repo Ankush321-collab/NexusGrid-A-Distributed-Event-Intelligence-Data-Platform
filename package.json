@@ -21,6 +21,7 @@
     "test:hard:type2": "vitest run tests/hard/type2-concurrency-race-stress.test.ts",
     "test:hard:type3": "vitest run tests/hard/type3-chaos-fault-injection.test.ts",
     "test:hard": "vitest run tests/hard",
+    "test:defenses": "vitest run tests/integration/production-defenses.test.ts",
     "test:overall": "vitest run tests/integration/overall-e2e.test.ts",
     "test:all": "vitest run",
     "lint": "echo 'Linting passed'",

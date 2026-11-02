@@ -11,11 +11,25 @@ export async function startWorker() {
   });
 
   // Start continuous polling loop
-  setInterval(() => {
+  const timer = setInterval(() => {
     processor.processTopic(config.KAFKA_RAW_TOPIC).catch((err) => {
       defaultLogger.error('Error during worker processing', { error: err.message });
     });
   }, config.BATCH_TIMEOUT_MS);
+
+  // Problem 6 Solution: Graceful shutdown on SIGTERM / SIGINT
+  const onSignal = async (signal: string) => {
+    defaultLogger.info(`Received ${signal}. Initiating graceful shutdown...`);
+    clearInterval(timer);
+    await processor.shutdown();
+    defaultLogger.info('Event processor shut down cleanly.');
+    if (process.env.NODE_ENV !== 'test') {
+      process.exit(0);
+    }
+  };
+
+  process.once('SIGTERM', () => onSignal('SIGTERM'));
+  process.once('SIGINT', () => onSignal('SIGINT'));
 
   return processor;
 }

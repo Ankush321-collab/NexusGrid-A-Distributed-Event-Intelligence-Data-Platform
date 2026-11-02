@@ -68,10 +68,16 @@ export interface KafkaEventMessage {
     'x-schema-version': string;
     'x-correlation-id': string;
     'x-retry-count': string;
+    'x-partition-key'?: string;
     'x-original-topic'?: string;
     'x-error-reason'?: string;
     'x-error-stack'?: string;
     'x-timestamp': string;
+    'x-retry-timestamp'?: string;
+    'x-replay-count'?: string;
+    'x-quarantine-reason'?: string;
+    'x-quarantined-at'?: string;
+    [key: string]: string | undefined;
   };
 }
 
