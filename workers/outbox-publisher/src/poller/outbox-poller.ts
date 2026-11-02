@@ -17,23 +17,30 @@ export class OutboxPoller {
    * Polls and publishes one batch of unprocessed outbox records
    */
   public async pollAndPublishBatch(batchSize: number = 50): Promise<number> {
-    const records = await this.db.fetchUnprocessedOutbox(batchSize);
+    const records = await this.db.fetchUnprocessedOutbox(batchSize, true);
     if (records.length === 0) return 0;
 
     for (const record of records) {
-      const syntheticEnvelope: EventEnvelope = {
-        event_id: `outbox_${record.id}_${Date.now()}`.padEnd(26, '0').slice(0, 26),
-        tenant_id: (record.payload.tenant_id as string) || 'system',
-        project_id: (record.payload.project_id as string) || 'system',
-        event_name: record.event_type,
-        occurred_at: record.created_at,
-        schema_version: 1,
-        properties: record.payload,
-      };
+      try {
+        const syntheticEnvelope: EventEnvelope = {
+          event_id: `outbox_${record.id}_${Date.now()}`.padEnd(26, '0').slice(0, 26),
+          tenant_id: (record.payload.tenant_id as string) || 'system',
+          project_id: (record.payload.project_id as string) || 'system',
+          event_name: record.event_type,
+          occurred_at: record.created_at,
+          schema_version: 1,
+          properties: record.payload,
+        };
 
-      await this.producer.publish(syntheticEnvelope, `cor_outbox_${record.id}`, 'nexusgrid.events.integration');
-      await this.db.markOutboxProcessed(record.id);
-      this.publishedCount++;
+        await this.producer.publish(syntheticEnvelope, `cor_outbox_${record.id}`, 'nexusgrid.events.integration');
+        await this.db.markOutboxProcessed(record.id);
+        this.publishedCount++;
+      } catch (err) {
+        if ('unlockOutboxRecord' in this.db) {
+          (this.db as any).unlockOutboxRecord(record.id);
+        }
+        throw err;
+      }
     }
 
     return records.length;

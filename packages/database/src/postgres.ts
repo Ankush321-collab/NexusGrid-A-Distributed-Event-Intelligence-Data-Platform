@@ -306,6 +306,8 @@ export class InMemoryPostgresAdapter implements DatabaseAdapter {
     return { items, nextCursor };
   }
 
+  private lockedOutboxIds: Set<number> = new Set();
+
   public async insertOutboxRecord(record: {
     aggregate_type: string;
     aggregate_id: string;
@@ -328,17 +330,34 @@ export class InMemoryPostgresAdapter implements DatabaseAdapter {
     return outbox;
   }
 
-  public async fetchUnprocessedOutbox(limit: number = 100): Promise<OutboxRecord[]> {
-    return this.outboxRecords
-      .filter((r) => r.processed_at === null)
-      .slice(0, limit);
+  /**
+   * Fetches unprocessed outbox records.
+   * If lockRows is true, simulates PostgreSQL `SELECT ... FOR UPDATE SKIP LOCKED`
+   * by atomically locking fetched rows so concurrent pollers skip them.
+   */
+  public async fetchUnprocessedOutbox(limit: number = 100, lockRows: boolean = false): Promise<OutboxRecord[]> {
+    const available = this.outboxRecords.filter(
+      (r) => r.processed_at === null && (!lockRows || !this.lockedOutboxIds.has(r.id))
+    );
+    const selected = available.slice(0, limit);
+    if (lockRows) {
+      for (const rec of selected) {
+        this.lockedOutboxIds.add(rec.id);
+      }
+    }
+    return selected;
   }
 
   public async markOutboxProcessed(id: number): Promise<void> {
     const rec = this.outboxRecords.find((r) => r.id === id);
     if (rec) {
       rec.processed_at = new Date().toISOString();
+      this.lockedOutboxIds.delete(id);
     }
+  }
+
+  public async unlockOutboxRecord(id: number): Promise<void> {
+    this.lockedOutboxIds.delete(id);
   }
 
   public async close(): Promise<void> {
