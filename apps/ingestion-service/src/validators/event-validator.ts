@@ -7,12 +7,24 @@ export interface ValidationOutcome {
   invalidParams?: Array<{ name: string; reason: string }>;
 }
 
-const MAX_BATCH_SIZE = 500;
-const MAX_PAYLOAD_BYTES = 1048576; // 1 MB
+export interface EventValidatorOptions {
+  maxBatchSize?: number;
+  maxPayloadBytes?: number;
+}
+
+const DEFAULT_MAX_BATCH_SIZE = 500;
+const DEFAULT_MAX_PAYLOAD_BYTES = 1048576; // 1 MB
 const ONE_HOUR_MS = 3600 * 1000;
 const THIRTY_DAYS_MS = 30 * 24 * 3600 * 1000;
 
 export class EventValidator {
+  private maxBatchSize: number;
+  private maxPayloadBytes: number;
+
+  constructor(options: EventValidatorOptions = {}) {
+    this.maxBatchSize = options.maxBatchSize ?? DEFAULT_MAX_BATCH_SIZE;
+    this.maxPayloadBytes = options.maxPayloadBytes ?? DEFAULT_MAX_PAYLOAD_BYTES;
+  }
   /**
    * Validates a single event against schema, tenant context, and timestamp boundaries
    */
@@ -78,7 +90,7 @@ export class EventValidator {
   public validatePayloadSize(contentLengthHeader?: string | number): ValidationOutcome {
     if (contentLengthHeader) {
       const length = typeof contentLengthHeader === 'string' ? parseInt(contentLengthHeader, 10) : contentLengthHeader;
-      if (length > MAX_PAYLOAD_BYTES) {
+      if (length > this.maxPayloadBytes) {
         return {
           valid: false,
           code: 'ERR_PAYLOAD_TOO_LARGE',
@@ -109,11 +121,11 @@ export class EventValidator {
       };
     }
 
-    if (events.length > MAX_BATCH_SIZE) {
+    if (events.length > this.maxBatchSize) {
       return {
         valid: false,
         code: 'ERR_BATCH_LIMIT_EXCEEDED',
-        detail: `Batch contains ${events.length} events, which exceeds maximum limit of ${MAX_BATCH_SIZE} events`,
+        detail: `Batch contains ${events.length} events, which exceeds maximum limit of ${this.maxBatchSize} events`,
       };
     }
 

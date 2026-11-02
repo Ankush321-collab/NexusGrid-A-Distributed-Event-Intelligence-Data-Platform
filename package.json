@@ -2,6 +2,7 @@
   "name": "nexusgrid",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Distributed Multi-Tenant Event Intelligence & Stream Analytics Platform",
   "engines": {
     "node": ">=20.0.0"

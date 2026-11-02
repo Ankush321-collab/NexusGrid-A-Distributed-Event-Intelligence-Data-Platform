@@ -1,34 +1,40 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { defaultRedis } from '@nexusgrid/database';
-import { defaultEventValidator } from './validators/event-validator.js';
-import { defaultKafkaProducer } from './producer/kafka-producer.js';
+import { defaultEventValidator, EventValidator } from './validators/event-validator.js';
+import { defaultKafkaProducer, KafkaProducer } from './producer/kafka-producer.js';
 import { createRateLimiter } from './rate-limit/rate-limiter.js';
 import { createIdempotencyMiddleware } from './middleware/idempotency.js';
 import { registerEventRoutes } from './routes/events.js';
 import { defaultLogger } from '@nexusgrid/observability';
+import { loadConfig, IngestionServiceEnvSchema } from '@nexusgrid/config';
 
 export interface BuildIngestionServerOptions {
   redis?: typeof defaultRedis;
-  validator?: typeof defaultEventValidator;
-  producer?: typeof defaultKafkaProducer;
+  validator?: EventValidator;
+  producer?: KafkaProducer;
   maxTokens?: number;
   refillRate?: number;
 }
 
 export async function buildIngestionServer(opts: BuildIngestionServerOptions = {}) {
+  const config = loadConfig(IngestionServiceEnvSchema);
+
   const app = Fastify({
     logger: false,
-    bodyLimit: 1048576, // 1MB
+    bodyLimit: config.MAX_PAYLOAD_BYTES,
   });
 
   await app.register(cors, { origin: true });
 
   const redis = opts.redis || defaultRedis;
-  const validator = opts.validator || defaultEventValidator;
-  const producer = opts.producer || defaultKafkaProducer;
-  const maxTokens = opts.maxTokens ?? 100;
-  const refillRate = opts.refillRate ?? 10;
+  const validator = opts.validator || new EventValidator({
+    maxBatchSize: config.MAX_BATCH_EVENTS,
+    maxPayloadBytes: config.MAX_PAYLOAD_BYTES,
+  });
+  const producer = opts.producer || new KafkaProducer(config.KAFKA_RAW_TOPIC);
+  const maxTokens = opts.maxTokens ?? config.RATE_LIMIT_MAX_TOKENS;
+  const refillRate = opts.refillRate ?? config.RATE_LIMIT_REFILL_RATE;
 
   // Rate Limiting Hook
   const rateLimiter = createRateLimiter(redis, maxTokens, refillRate);
@@ -39,7 +45,7 @@ export async function buildIngestionServer(opts: BuildIngestionServerOptions = {
   app.addHook('preHandler', idempotency);
 
   // Health probe
-  app.get('/health', async () => ({ status: 'UP', service: 'ingestion-service' }));
+  app.get('/health', async () => ({ status: 'UP', service: config.SERVICE_NAME }));
 
   // Register event routes
   registerEventRoutes(app, validator, producer);
@@ -48,9 +54,9 @@ export async function buildIngestionServer(opts: BuildIngestionServerOptions = {
 }
 
 if (process.env.NODE_ENV !== 'test' && import.meta.url === `file://${process.argv[1]}`) {
-  const port = parseInt(process.env.PORT || '8080', 10);
+  const config = loadConfig(IngestionServiceEnvSchema);
   buildIngestionServer().then((app) => {
-    app.listen({ port, host: '0.0.0.0' }, (err, address) => {
+    app.listen({ port: config.PORT, host: config.HOST }, (err, address) => {
       if (err) {
         defaultLogger.fatal('Failed to start ingestion service', { error: err.message });
         process.exit(1);

@@ -43,3 +43,4 @@ SELECT
     countIf(properties_numeric['status_code'] >= 500) AS error_count
 FROM nexusgrid.events
 GROUP BY tenant_id, project_id, event_name, window_start;
+

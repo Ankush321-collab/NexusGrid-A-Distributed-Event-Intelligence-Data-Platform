@@ -3,11 +3,14 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@nexusgrid/contracts": ["./packages/contracts/src"],
+      "@nexusgrid/contracts": ["./packages/contracts/src/index.ts"],
       "@nexusgrid/contracts/*": ["./packages/contracts/src/*"],
-      "@nexusgrid/config": ["./packages/config/src"],
-      "@nexusgrid/observability": ["./packages/observability/src"],
-      "@nexusgrid/database": ["./packages/database/src"]
+      "@nexusgrid/config": ["./packages/config/src/index.ts"],
+      "@nexusgrid/config/*": ["./packages/config/src/*"],
+      "@nexusgrid/observability": ["./packages/observability/src/index.ts"],
+      "@nexusgrid/observability/*": ["./packages/observability/src/*"],
+      "@nexusgrid/database": ["./packages/database/src/index.ts"],
+      "@nexusgrid/database/*": ["./packages/database/src/*"]
     }
   },
   "include": [
@@ -18,4 +21,3 @@
     "scripts/**/*"
   ]
 }
-

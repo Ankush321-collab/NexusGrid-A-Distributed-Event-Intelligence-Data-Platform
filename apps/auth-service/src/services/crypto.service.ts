@@ -8,6 +8,12 @@ export interface GeneratedApiKey {
 }
 
 export class CryptoService {
+  private salt: string;
+
+  constructor(salt: string = process.env.API_KEY_SALT || 'nexusgrid_static_salt_v1') {
+    this.salt = salt;
+  }
+
   /**
    * Generates a secure API key following the standard format:
    * ng_<environment>_<prefix8>_<secret32>
@@ -31,8 +37,7 @@ export class CryptoService {
    * Hashes the API key secret with SHA-256 and salt
    */
   public hashSecret(secret: string): string {
-    const salt = 'nexusgrid_static_salt_v1';
-    return crypto.createHash('sha256').update(`${salt}:${secret}`).digest('hex');
+    return crypto.createHash('sha256').update(`${this.salt}:${secret}`).digest('hex');
   }
 
   /**

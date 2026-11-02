@@ -1,13 +1,18 @@
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 WORKDIR /app
-RUN npm install -g pnpm
-COPY . .
-RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @nexusgrid/query-service build
 
-FROM node:20-alpine AS runner
-WORKDIR /app
-USER 10001
-COPY --from=builder /app .
+RUN npm install -g pnpm
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.base.json ./
+COPY packages ./packages
+COPY apps ./apps
+COPY workers ./workers
+
+RUN pnpm install --frozen-lockfile
+
+USER node
+
+ENV NODE_ENV=production
 EXPOSE 8083
-CMD ["node", "apps/query-service/dist/index.js"]
+
+CMD ["pnpm", "--filter", "@nexusgrid/query-service", "start"]

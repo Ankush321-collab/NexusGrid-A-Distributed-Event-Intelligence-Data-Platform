@@ -14,6 +14,7 @@ export interface AlertRuleConfig {
   cooldown_minutes: number;
   webhook_url: string;
   webhook_secret: string;
+  window_minutes?: number;
 }
 
 export interface EvaluationOutcome {
@@ -135,3 +136,4 @@ export class AlertStateMachine {
 }
 
 export const defaultAlertStateMachine = new AlertStateMachine();
+

@@ -1,6 +1,7 @@
 {
   "name": "@nexusgrid/contracts",
   "version": "1.0.0",
+  "type": "module",
   "description": "Canonical contracts, schemas, OpenAPI specs, and types for NexusGrid",
   "main": "src/index.ts",
   "types": "src/index.ts",

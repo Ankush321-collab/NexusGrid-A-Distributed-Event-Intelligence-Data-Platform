@@ -1,6 +1,7 @@
 {
   "name": "@nexusgrid/observability",
   "version": "1.0.0",
+  "type": "module",
   "description": "Structured logging, Prometheus metrics, and distributed tracing for NexusGrid",
   "main": "src/index.ts",
   "types": "src/index.ts"

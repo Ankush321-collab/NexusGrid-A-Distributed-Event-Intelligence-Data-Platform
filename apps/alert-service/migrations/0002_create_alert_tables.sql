@@ -33,3 +33,4 @@ CREATE TABLE IF NOT EXISTS alert_incidents (
 CREATE INDEX IF NOT EXISTS idx_alert_rules_tenant ON alert_rules (tenant_id, project_id);
 CREATE INDEX IF NOT EXISTS idx_alert_incidents_rule ON alert_incidents (rule_id, state);
 CREATE INDEX IF NOT EXISTS idx_alert_incidents_dedupe ON alert_incidents (dedupe_key);
+

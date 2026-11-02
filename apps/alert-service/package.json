@@ -1,6 +1,7 @@
 {
   "name": "@nexusgrid/alert-service",
   "version": "1.0.0",
+  "type": "module",
   "description": "SLO threshold monitoring, state-machine hysteresis, and cryptographically signed webhook alert dispatching",
   "main": "src/index.ts",
   "scripts": {
@@ -16,3 +17,4 @@
     "@fastify/cors": "^10.0.0"
   }
 }
+

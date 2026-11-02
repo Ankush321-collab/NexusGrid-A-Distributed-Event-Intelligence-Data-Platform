@@ -113,3 +113,4 @@ export class ClickHouseBulkSink {
     return this.buffer.length;
   }
 }
+

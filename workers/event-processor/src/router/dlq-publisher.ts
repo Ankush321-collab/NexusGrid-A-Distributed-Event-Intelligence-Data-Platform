@@ -1,5 +1,5 @@
 import type { KafkaEventMessage } from '@nexusgrid/contracts';
-import { KafkaProducer } from '../../../apps/ingestion-service/src/producer/kafka-producer.js';
+import { KafkaProducer } from '@nexusgrid/database';
 import type { ClassifiedFailure } from './error-classifier.js';
 
 export class DLQPublisher {

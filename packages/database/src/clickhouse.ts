@@ -40,6 +40,8 @@ export interface QueryExecutionResult {
     partitionsScanned: string[];
     elapsedMs: number;
     fromCache?: boolean;
+    coalesced?: boolean;
+    cachedAt?: number;
   };
 }
 
@@ -341,3 +343,4 @@ export class InMemoryClickHouseAdapter implements ClickHouseClientInterface {
 }
 
 export const defaultClickHouse = new InMemoryClickHouseAdapter();
+

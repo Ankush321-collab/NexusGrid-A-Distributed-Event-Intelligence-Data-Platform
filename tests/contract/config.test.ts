@@ -5,6 +5,11 @@ import {
   IngestionServiceEnvSchema,
   AuthServiceEnvSchema,
   KafkaEnvSchema,
+  QueryServiceEnvSchema,
+  AlertServiceEnvSchema,
+  EventProcessorEnvSchema,
+  OutboxPublisherEnvSchema,
+  MinioEnvSchema,
 } from '../../packages/config/src/index.js';
 
 describe('Phase 0 - Validated 12-Factor Environment Configurations', () => {
@@ -49,6 +54,33 @@ describe('Phase 0 - Validated 12-Factor Environment Configurations', () => {
     const authConfig = loadConfig(AuthServiceEnvSchema, {});
     expect(authConfig.POSTGRES_DB).toBe('nexusgrid');
     expect(authConfig.POSTGRES_PORT).toBe(5432);
+  });
+
+  it('validates Query, Alert, EventProcessor, Outbox, and MinIO schemas', () => {
+    const queryConfig = loadConfig(QueryServiceEnvSchema, {});
+    expect(queryConfig.PORT).toBe(8083);
+    expect(queryConfig.QUERY_MAX_SCAN_DAYS).toBe(90);
+    expect(queryConfig.CACHE_TTL_SEC).toBe(60);
+
+    const alertConfig = loadConfig(AlertServiceEnvSchema, {});
+    expect(alertConfig.PORT).toBe(8084);
+    expect(alertConfig.ALERT_EVAL_INTERVAL_MS).toBe(10000);
+    expect(alertConfig.WEBHOOK_SIGNING_SECRET).toBe('nexusgrid_webhook_secret_key_v1');
+
+    const epConfig = loadConfig(EventProcessorEnvSchema, {});
+    expect(epConfig.PORT).toBe(8082);
+    expect(epConfig.BATCH_SIZE_ITEMS).toBe(5000);
+    expect(epConfig.BATCH_TIMEOUT_MS).toBe(500);
+    expect(epConfig.ENABLE_S3_ARCHIVE).toBe(true);
+
+    const outboxConfig = loadConfig(OutboxPublisherEnvSchema, {});
+    expect(outboxConfig.PORT).toBe(8085);
+    expect(outboxConfig.OUTBOX_POLL_INTERVAL_MS).toBe(500);
+    expect(outboxConfig.OUTBOX_BATCH_SIZE).toBe(100);
+
+    const minioConfig = loadConfig(MinioEnvSchema, {});
+    expect(minioConfig.MINIO_PORT).toBe(9002);
+    expect(minioConfig.MINIO_BUCKET).toBe('nexusgrid-archives');
   });
 });
 

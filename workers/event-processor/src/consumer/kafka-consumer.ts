@@ -1,5 +1,5 @@
 import type { KafkaEventMessage, EventEnvelope } from '@nexusgrid/contracts';
-import { KafkaProducer } from '../../../apps/ingestion-service/src/producer/kafka-producer.js';
+import { KafkaProducer } from '@nexusgrid/database';
 import { ErrorClassifier, defaultErrorClassifier } from '../router/error-classifier.js';
 import { DLQPublisher } from '../router/dlq-publisher.js';
 import { EventBatcher } from '../batcher/event-batcher.js';

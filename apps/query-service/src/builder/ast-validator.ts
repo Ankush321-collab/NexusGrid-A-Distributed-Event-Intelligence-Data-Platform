@@ -9,12 +9,19 @@ export interface ValidatedQueryPlan {
 
 const ALLOWED_METRIC_PREFIXES = ['count()', 'avg(', 'p95(', 'sum(', 'min(', 'max('];
 const ALLOWED_OPERATORS = new Set(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in']);
-const MAX_TIME_RANGE_MS = 90 * 24 * 3600 * 1000; // 90 days maximum scan window
 
 // Strict identifier regex to prevent SQL injection in column names
 const SAFE_IDENTIFIER_REGEX = /^[a-zA-Z0-9_.]+$/;
 
 export class ASTValidator {
+  private maxScanDays: number;
+  private maxTimeRangeMs: number;
+
+  constructor(maxScanDays: number = 90) {
+    this.maxScanDays = maxScanDays;
+    this.maxTimeRangeMs = maxScanDays * 24 * 3600 * 1000;
+  }
+
   /**
    * Validates analytical query parameters against strict allowlists and scan boundaries
    */
@@ -42,12 +49,12 @@ export class ASTValidator {
       return { valid: false, code: 'ERR_INVALID_TIME_WINDOW', error: 'time_range.start must be strictly before time_range.end' };
     }
 
-    // Time-range bound protection (Max 90 days)
-    if (endMs - startMs > MAX_TIME_RANGE_MS) {
+    // Time-range bound protection (Max configured days)
+    if (endMs - startMs > this.maxTimeRangeMs) {
       return {
         valid: false,
         code: 'ERR_SCAN_COST_LIMIT_EXCEEDED',
-        error: `Query time range exceeds maximum allowed limit of 90 days (${Math.round((endMs - startMs) / (24 * 3600 * 1000))} days requested)`,
+        error: `Query time range exceeds maximum allowed limit of ${this.maxScanDays} days (${Math.round((endMs - startMs) / (24 * 3600 * 1000))} days requested)`,
       };
     }
 

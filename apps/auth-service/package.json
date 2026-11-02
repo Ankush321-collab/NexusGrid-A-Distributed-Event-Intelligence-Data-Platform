@@ -1,6 +1,7 @@
 {
   "name": "@nexusgrid/auth-service",
   "version": "1.0.0",
+  "type": "module",
   "description": "Multi-tenant identity, API key lifecycle, and RBAC control service",
   "main": "src/index.ts",
   "scripts": {

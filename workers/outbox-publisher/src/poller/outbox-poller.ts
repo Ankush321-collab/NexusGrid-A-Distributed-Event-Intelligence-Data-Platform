@@ -1,5 +1,4 @@
-import type { InMemoryPostgresAdapter } from '@nexusgrid/database';
-import type { KafkaProducer } from '../../../apps/ingestion-service/src/producer/kafka-producer.js';
+import type { InMemoryPostgresAdapter, KafkaProducer } from '@nexusgrid/database';
 import type { EventEnvelope } from '@nexusgrid/contracts';
 
 export class OutboxPoller {

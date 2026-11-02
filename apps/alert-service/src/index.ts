@@ -5,14 +5,16 @@ import { RuleEvaluator } from './evaluator/rule-evaluator.js';
 import { defaultAlertStateMachine } from './state/alert-state-machine.js';
 import { defaultWebhookDispatcher } from './dispatch/webhook-dispatcher.js';
 import { defaultLogger } from '@nexusgrid/observability';
+import { loadConfig, AlertServiceEnvSchema } from '@nexusgrid/config';
 
 export async function buildAlertServer(evaluator?: RuleEvaluator) {
+  const config = loadConfig(AlertServiceEnvSchema);
   const app = Fastify({ logger: false });
   await app.register(cors, { origin: true });
 
   const ruleEvaluator = evaluator || new RuleEvaluator(defaultClickHouse, defaultAlertStateMachine, defaultWebhookDispatcher);
 
-  app.get('/health', async () => ({ status: 'UP', service: 'alert-service' }));
+  app.get('/health', async () => ({ status: 'UP', service: config.SERVICE_NAME }));
 
   // Register Rule
   app.post('/v1/alerts/rules', async (req, reply) => {
@@ -41,9 +43,9 @@ export async function buildAlertServer(evaluator?: RuleEvaluator) {
 }
 
 if (process.env.NODE_ENV !== 'test' && import.meta.url === `file://${process.argv[1]}`) {
-  const port = parseInt(process.env.PORT || '8084', 10);
+  const config = loadConfig(AlertServiceEnvSchema);
   buildAlertServer().then((app) => {
-    app.listen({ port, host: '0.0.0.0' }, (err, address) => {
+    app.listen({ port: config.PORT, host: config.HOST }, (err, address) => {
       if (err) {
         defaultLogger.fatal('Failed to start alert service', { error: err.message });
         process.exit(1);
@@ -52,3 +54,4 @@ if (process.env.NODE_ENV !== 'test' && import.meta.url === `file://${process.arg
     });
   });
 }
+

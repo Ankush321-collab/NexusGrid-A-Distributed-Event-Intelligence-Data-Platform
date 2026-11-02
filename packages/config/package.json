@@ -1,6 +1,7 @@
 {
   "name": "@nexusgrid/config",
   "version": "1.0.0",
+  "type": "module",
   "description": "Validated 12-Factor environment schemas for NexusGrid services",
   "main": "src/index.ts",
   "types": "src/index.ts",

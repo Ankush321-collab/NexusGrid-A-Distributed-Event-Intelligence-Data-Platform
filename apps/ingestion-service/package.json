@@ -1,6 +1,7 @@
 {
   "name": "@nexusgrid/ingestion-service",
   "version": "1.0.0",
+  "type": "module",
   "description": "High-throughput event validation, rate-limiting, and Kafka producer gateway",
   "main": "src/index.ts",
   "scripts": {

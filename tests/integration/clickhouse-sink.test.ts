@@ -240,3 +240,4 @@ describe('Phase 4 - ClickHouse Analytical Storage, ReplacingMergeTree, and S3 Co
     expect(resilientSink.getPendingBufferCount()).toBe(0);
   });
 });
+

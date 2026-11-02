@@ -1,14 +1,17 @@
-import Ajv, { type ValidateFunction } from 'ajv';
-import addFormats from 'ajv-formats';
-import eventEnvelopeSchema from './schemas/event-envelope.json' assert { type: 'json' };
-import errorEnvelopeSchema from './schemas/error-envelope.json' assert { type: 'json' };
+import AjvPkg, { type ValidateFunction } from 'ajv';
+import addFormatsPkg from 'ajv-formats';
+import eventEnvelopeSchema from './schemas/event-envelope.json' with { type: 'json' };
+import errorEnvelopeSchema from './schemas/error-envelope.json' with { type: 'json' };
 import type { EventEnvelope, ProblemDetails } from './types/index.js';
 
-let ajvInstance: Ajv | null = null;
+const Ajv = (AjvPkg as any).default || AjvPkg;
+const addFormats = (addFormatsPkg as any).default || addFormatsPkg;
+
+let ajvInstance: any = null;
 let eventValidateFn: ValidateFunction | null = null;
 let errorValidateFn: ValidateFunction | null = null;
 
-function getAjv(): Ajv {
+function getAjv(): any {
   if (!ajvInstance) {
     ajvInstance = new Ajv({ allErrors: true, strict: false });
     addFormats(ajvInstance);
@@ -37,11 +40,12 @@ export function validateEventEnvelope(data: unknown): ValidationResult {
     if (!eventValidateFn) {
       eventValidateFn = ajv.compile(eventEnvelopeSchema);
     }
-    const isValid = eventValidateFn(data);
-    if (!isValid && eventValidateFn.errors) {
+    const fn = eventValidateFn!;
+    const isValid = fn(data);
+    if (!isValid && fn.errors) {
       return {
         valid: false,
-        errors: eventValidateFn.errors.map(
+        errors: fn.errors.map(
           (e) => `${e.instancePath || 'root'} ${e.message || 'is invalid'}`
         ),
       };

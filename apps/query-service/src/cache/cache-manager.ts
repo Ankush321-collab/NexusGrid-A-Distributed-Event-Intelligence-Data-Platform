@@ -113,3 +113,4 @@ export class QueryCacheManager {
     this.inFlightQueries.clear();
   }
 }
+

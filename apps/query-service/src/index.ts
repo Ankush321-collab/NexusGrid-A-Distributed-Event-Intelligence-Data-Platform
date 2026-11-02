@@ -5,6 +5,7 @@ import { QueryCacheManager } from './cache/cache-manager.js';
 import { defaultASTValidator, ASTValidator } from './builder/ast-validator.js';
 import { registerAnalyticsRoutes } from './routes/analytics.js';
 import { defaultLogger } from '@nexusgrid/observability';
+import { loadConfig, QueryServiceEnvSchema } from '@nexusgrid/config';
 
 export interface BuildQueryServerOptions {
   clickhouse?: ClickHouseClientInterface;
@@ -14,6 +15,7 @@ export interface BuildQueryServerOptions {
 }
 
 export async function buildQueryServer(opts: BuildQueryServerOptions = {}) {
+  const config = loadConfig(QueryServiceEnvSchema);
   const app = Fastify({
     logger: false,
   });
@@ -22,10 +24,10 @@ export async function buildQueryServer(opts: BuildQueryServerOptions = {}) {
 
   const clickhouse = opts.clickhouse || defaultClickHouse;
   const redis = opts.redis || defaultRedis;
-  const cacheManager = opts.cacheManager || new QueryCacheManager(redis);
-  const validator = opts.validator || defaultASTValidator;
+  const cacheManager = opts.cacheManager || new QueryCacheManager(redis, config.CACHE_TTL_SEC * 1000);
+  const validator = opts.validator || new ASTValidator(config.QUERY_MAX_SCAN_DAYS);
 
-  app.get('/health', async () => ({ status: 'UP', service: 'query-service' }));
+  app.get('/health', async () => ({ status: 'UP', service: config.SERVICE_NAME }));
 
   registerAnalyticsRoutes(app, clickhouse, cacheManager, validator);
 
@@ -33,9 +35,9 @@ export async function buildQueryServer(opts: BuildQueryServerOptions = {}) {
 }
 
 if (process.env.NODE_ENV !== 'test' && import.meta.url === `file://${process.argv[1]}`) {
-  const port = parseInt(process.env.PORT || '8083', 10);
+  const config = loadConfig(QueryServiceEnvSchema);
   buildQueryServer().then((app) => {
-    app.listen({ port, host: '0.0.0.0' }, (err, address) => {
+    app.listen({ port: config.PORT, host: config.HOST }, (err, address) => {
       if (err) {
         defaultLogger.fatal('Failed to start query service', { error: err.message });
         process.exit(1);
@@ -44,3 +46,4 @@ if (process.env.NODE_ENV !== 'test' && import.meta.url === `file://${process.arg
     });
   });
 }
+

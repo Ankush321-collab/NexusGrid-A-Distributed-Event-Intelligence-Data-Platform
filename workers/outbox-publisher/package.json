@@ -1,6 +1,7 @@
 {
   "name": "@nexusgrid/outbox-publisher",
   "version": "1.0.0",
+  "type": "module",
   "description": "Transactional outbox poller forwarding PostgreSQL metadata events to Kafka",
   "main": "src/index.ts",
   "scripts": {

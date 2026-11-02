@@ -1,19 +1,21 @@
-import { defaultKafkaProducer } from '../../apps/ingestion-service/src/producer/kafka-producer.js';
+import { defaultKafkaProducer } from '@nexusgrid/database';
 import { StreamEventProcessor } from './consumer/kafka-consumer.js';
 import { defaultLogger } from '@nexusgrid/observability';
+import { loadConfig, EventProcessorEnvSchema } from '@nexusgrid/config';
 
 export async function startWorker() {
-  defaultLogger.info('Starting Stream Event Processor Worker...');
+  const config = loadConfig(EventProcessorEnvSchema);
+  defaultLogger.info(`Starting ${config.SERVICE_NAME}...`);
   const processor = new StreamEventProcessor(defaultKafkaProducer, async (event) => {
     defaultLogger.debug('Processing event in worker', { event_id: event.event_id });
   });
 
   // Start continuous polling loop
   setInterval(() => {
-    processor.processTopic().catch((err) => {
+    processor.processTopic(config.KAFKA_RAW_TOPIC).catch((err) => {
       defaultLogger.error('Error during worker processing', { error: err.message });
     });
-  }, 100);
+  }, config.BATCH_TIMEOUT_MS);
 
   return processor;
 }

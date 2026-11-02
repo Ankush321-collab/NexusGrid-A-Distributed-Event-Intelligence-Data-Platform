@@ -42,3 +42,4 @@ TTL toDateTime(occurred_at) + INTERVAL 90 DAY;
 5. **Retention Policy (`TTL toDateTime(occurred_at) + INTERVAL 90 DAY`)**:
    - Automated hot-tier partition drop after 90 days.
    - Historical cold data is durably preserved in S3 / MinIO Parquet archives.
+

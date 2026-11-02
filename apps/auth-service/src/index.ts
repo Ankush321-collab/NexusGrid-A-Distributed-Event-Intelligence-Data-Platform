@@ -2,28 +2,39 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { defaultDatabase } from '@nexusgrid/database';
 import { AuthService } from './services/auth.service.js';
+import { CryptoService } from './services/crypto.service.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
 import { defaultLogger } from '@nexusgrid/observability';
+import { loadConfig, AuthServiceEnvSchema } from '@nexusgrid/config';
 
-export async function buildAuthServer() {
+export interface BuildAuthServerOptions {
+  authService?: AuthService;
+  database?: typeof defaultDatabase;
+  cryptoService?: CryptoService;
+}
+
+export async function buildAuthServer(opts: BuildAuthServerOptions = {}) {
+  const config = loadConfig(AuthServiceEnvSchema);
   const app = Fastify({
     logger: false, // Observability package handles structured logging
   });
 
   await app.register(cors, { origin: true });
 
-  const authService = new AuthService(defaultDatabase);
-  registerAuthRoutes(app, authService, defaultDatabase);
+  const db = opts.database || defaultDatabase;
+  const crypto = opts.cryptoService || new CryptoService(config.API_KEY_SALT);
+  const authService = opts.authService || new AuthService(db, crypto);
+  registerAuthRoutes(app, authService, db);
 
-  app.get('/health', async () => ({ status: 'UP', service: 'auth-service' }));
+  app.get('/health', async () => ({ status: 'UP', service: config.SERVICE_NAME }));
 
   return app;
 }
 
 if (process.env.NODE_ENV !== 'test' && import.meta.url === `file://${process.argv[1]}`) {
-  const port = parseInt(process.env.PORT || '8081', 10);
+  const config = loadConfig(AuthServiceEnvSchema);
   buildAuthServer().then((app) => {
-    app.listen({ port, host: '0.0.0.0' }, (err, address) => {
+    app.listen({ port: config.PORT, host: config.HOST }, (err, address) => {
       if (err) {
         defaultLogger.fatal('Failed to start auth service', { error: err.message });
         process.exit(1);

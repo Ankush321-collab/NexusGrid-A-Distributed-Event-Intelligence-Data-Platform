@@ -45,3 +45,4 @@ Content-Type: application/json
 ```
 
 Receivers verify the signature using `crypto.timingSafeEqual` to prevent forgery and timing attacks.
+

@@ -1,14 +1,18 @@
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 WORKDIR /app
+
 RUN npm install -g pnpm
-COPY . .
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.base.json ./
+COPY packages ./packages
+COPY apps ./apps
+COPY workers ./workers
+
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @nexusgrid/ingestion-service build
 
-FROM node:20-alpine AS runner
-WORKDIR /app
-USER 10001
-COPY --from=builder /app .
+USER node
+
+ENV NODE_ENV=production
 EXPOSE 8080
-CMD ["node", "apps/ingestion-service/dist/index.js"]
 
+CMD ["pnpm", "--filter", "@nexusgrid/ingestion-service", "start"]
