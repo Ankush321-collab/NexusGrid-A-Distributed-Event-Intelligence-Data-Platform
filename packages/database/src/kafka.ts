@@ -92,3 +92,4 @@ export class KafkaProducer {
 }
 
 export const defaultKafkaProducer = new KafkaProducer();
+

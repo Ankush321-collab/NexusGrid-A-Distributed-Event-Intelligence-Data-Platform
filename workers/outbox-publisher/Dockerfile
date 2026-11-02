@@ -15,3 +15,4 @@ USER node
 ENV NODE_ENV=production
 
 CMD ["pnpm", "--filter", "@nexusgrid/outbox-publisher", "start"]
+
